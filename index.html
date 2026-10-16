@@ -1,0 +1,1667 @@
+<!doctype html>
+<html lang="ko">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#FFFFFF">
+<title>용돈 키우기 - 0원에서 시작하는 나의 첫 자산</title>
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/gh/orioncactus/pretendard@v1.3.9/dist/web/variable/pretendardvariable-dynamic-subset.min.css">
+<style>
+/* ===== 디자인 토큰 (CSS 변수) ===== */
+/* 테마 '통장 잉크': 첫 통장과 도장 잉크의 파란색. 규칙은 CLAUDE.md 참고 */
+:root {
+  --ink: #1F4FE0;        /* 유일한 포인트 색, 하락 표시(국내 증시 관례) */
+  --ink-soft: #EAF0FE;   /* 포인트 색의 옅은 배경 */
+  --paper: #FFFFFF;      /* 앱 배경 */
+  --card: #F4F6F9;       /* 카드 면 */
+  --line: #E3E7ED;       /* 구분선 */
+  --text: #141A23;       /* 본문 */
+  --sub: #6B7684;        /* 보조 문구 */
+  --rise: #E0453A;       /* 투자 상승, 사기 경고, 손실 */
+  --desk: #E9ECF1;       /* PC 앱 바깥 배경 */
+
+  --font: "Pretendard Variable", Pretendard, -apple-system, BlinkMacSystemFont, "Apple SD Gothic Neo", "Malgun Gothic", system-ui, sans-serif;
+  --fs-hero: 40px;
+  --fs-xl: 24px;
+  --fs-lg: 18px;
+  --fs-md: 15px;
+  --fs-sm: 13px;
+
+  --r-card: 20px;
+  --r-btn: 14px;
+  --r-chip: 10px;
+  --r-sheet: 24px;
+  --r-frame: 28px;
+
+  --gutter: 20px;
+  --nav-h: 64px;
+  --shadow-float: 0 12px 32px rgba(20, 26, 35, 0.16);
+}
+
+/* ===== 기본 ===== */
+*, *::before, *::after { box-sizing: border-box; }
+html, body { height: 100%; margin: 0; }
+body {
+  background: var(--paper);
+  color: var(--text);
+  font-family: var(--font);
+  font-size: var(--fs-md);
+  font-weight: 500;
+  line-height: 1.5;
+  word-break: keep-all;
+  -webkit-font-smoothing: antialiased;
+  -webkit-tap-highlight-color: transparent;
+}
+button { font: inherit; color: inherit; border: 0; background: none; cursor: pointer; padding: 0; }
+button:disabled { cursor: default; }
+:focus-visible { outline: 2px solid var(--ink); outline-offset: 2px; }
+h1, h2, h3, p { margin: 0; }
+.num { font-variant-numeric: tabular-nums; }
+[hidden] { display: none !important; }
+
+/* ===== 앱 프레임 ===== */
+.app {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  max-width: 430px;
+  height: 100vh;
+  height: 100dvh;
+  margin: 0 auto;
+  background: var(--paper);
+  overflow: hidden;
+}
+@media (min-width: 600px) {
+  body { background: var(--desk); display: grid; place-items: center; min-height: 100vh; }
+  .app {
+    width: 430px;
+    height: min(900px, calc(100vh - 48px));
+    border-radius: var(--r-frame);
+    box-shadow: 0 24px 60px rgba(20, 26, 35, 0.12);
+  }
+}
+
+/* ===== 상단: 제목 + 총자산 ===== */
+.topbar {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 4px 8px 0 var(--gutter);
+}
+.topbar h1 { font-size: var(--fs-md); font-weight: 700; }
+.icon-btn {
+  width: 44px; height: 44px; display: grid; place-items: center;
+  border-radius: var(--r-btn); color: var(--sub);
+}
+.icon-btn:hover { color: var(--text); }
+svg.i { width: 22px; height: 22px; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+
+.hero { padding: 0 var(--gutter); }
+.hero-label { font-size: var(--fs-sm); color: var(--sub); }
+.hero-total {
+  font-size: var(--fs-hero); font-weight: 800; letter-spacing: -0.02em; line-height: 1.15;
+  margin-top: 2px;
+}
+.hero-row {
+  display: flex; justify-content: space-between; align-items: baseline; gap: 12px;
+  margin-top: 4px; font-size: var(--fs-sm); color: var(--sub);
+}
+.hero-cps { font-size: var(--fs-md); font-weight: 700; color: var(--ink); }
+.goal { margin-top: 12px; }
+.goal-row { display: flex; justify-content: space-between; font-size: var(--fs-sm); color: var(--sub); }
+.goal-row b { color: var(--text); font-weight: 600; }
+.bar { height: 6px; margin-top: 6px; border-radius: 3px; background: var(--line); overflow: hidden; }
+.bar > i { display: block; height: 100%; width: 0; background: var(--ink); border-radius: 3px; transition: width .3s ease; }
+
+/* 통장 정리 줄: 최근 거래가 통장에 인쇄되듯 바뀜 */
+.ledger {
+  margin-top: 12px; padding-top: 6px;
+  border-top: 1px dashed var(--line);
+  font-size: var(--fs-sm);
+  min-height: 46px;
+}
+.ledger-row { display: grid; grid-template-columns: 40px 1fr auto; gap: 8px; line-height: 20px; color: var(--sub); }
+.ledger-row:first-child { color: var(--text); }
+.ledger-row .amt { text-align: right; font-weight: 600; }
+.ledger-row .amt.minus { color: var(--sub); }
+.ledger-row:first-child .amt.loss { color: var(--rise); }
+.ledger-row.print { animation: print .28s steps(10, end); }
+@keyframes print { from { clip-path: inset(0 100% 0 0); } to { clip-path: inset(0 0 0 0); } }
+.ledger-empty { color: var(--sub); line-height: 20px; }
+
+/* ===== 가운데: 탭 버튼 ===== */
+.tap-zone { position: relative; padding: 10px var(--gutter); }
+.tap-btn {
+  width: 100%; height: 64px;
+  border-radius: var(--r-card);
+  background: var(--ink); color: #fff;
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  transition: transform .08s ease;
+  touch-action: manipulation; user-select: none;
+}
+.tap-btn:active, .tap-btn.pressed { transform: scale(.96); }
+.tap-btn b { font-size: var(--fs-lg); font-weight: 700; line-height: 1.3; }
+.tap-btn span { font-size: var(--fs-sm); opacity: .8; }
+.float {
+  position: absolute; pointer-events: none;
+  font-size: var(--fs-md); font-weight: 700; color: var(--ink);
+  white-space: nowrap; transform: translate(-50%, -50%);
+  animation: floatUp .7s ease-out forwards;
+}
+@keyframes floatUp {
+  from { opacity: 1; transform: translate(-50%, -50%); }
+  to   { opacity: 0; transform: translate(-50%, calc(-50% - 40px)); }
+}
+
+/* ===== 탭별 콘텐츠 ===== */
+.content {
+  flex: 1; overflow-y: auto; overscroll-behavior: contain;
+  padding: 8px var(--gutter) 24px;
+  border-top: 1px solid var(--line);
+}
+.panel-head { padding: 14px 0 12px; }
+.panel-head h2 { font-size: var(--fs-lg); font-weight: 700; }
+.panel-head p { font-size: var(--fs-sm); color: var(--sub); margin-top: 2px; max-width: 34em; }
+.stack { display: grid; gap: 10px; }
+.card { background: var(--card); border-radius: var(--r-card); padding: 16px 18px; }
+.card h3 { font-size: var(--fs-md); font-weight: 700; }
+.muted { color: var(--sub); font-size: var(--fs-sm); }
+.section-gap { margin-top: 22px; }
+
+/* 구매 카드 (수입원, 심부름 요령, 위시리스트) */
+.item {
+  display: flex; align-items: center; gap: 12px;
+  box-shadow: inset 0 0 0 1.5px transparent;
+  transition: opacity .2s ease, box-shadow .2s ease, background-color .2s ease;
+}
+.item-main { flex: 1; min-width: 0; }
+.item-title { display: flex; align-items: center; gap: 8px; }
+.item-name { font-weight: 700; }
+.badge {
+  font-size: 12px; font-weight: 600; color: var(--ink);
+  background: var(--ink-soft); border-radius: var(--r-chip); padding: 1px 8px;
+}
+.badge:empty { display: none; }
+.item-desc { font-size: var(--fs-sm); color: var(--sub); }
+.item-yield { font-size: var(--fs-sm); font-weight: 600; margin-top: 2px; }
+.item-need { font-size: 12px; color: var(--sub); margin-top: 2px; }
+.item-need:empty { display: none; }
+.buy {
+  flex: none; min-width: 96px; min-height: 52px; padding: 6px 12px;
+  border-radius: var(--r-btn);
+  background: var(--paper); color: var(--sub);
+  display: flex; flex-direction: column; align-items: center; justify-content: center;
+  font-size: 12px; font-weight: 600; line-height: 1.3;
+}
+.buy .buy-price { font-size: var(--fs-sm); font-weight: 700; }
+.item.off { opacity: .5; }
+.item.can { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--ink); }
+.item.can .buy { background: var(--ink); color: #fff; }
+.item.can .buy:active { transform: scale(.97); }
+.item.ready { animation: ready .6s ease; }
+@keyframes ready { from { background-color: var(--ink-soft); } to { background-color: var(--paper); } }
+.item.owned { opacity: 1; }
+.item.owned .buy { background: none; color: var(--ink); }
+.locked { color: var(--sub); font-size: var(--fs-sm); border: 1.5px dashed var(--line); background: none; }
+
+.seq {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; font-size: var(--fs-sm); font-weight: 700;
+  background: var(--paper); color: var(--sub);
+}
+.item.can .seq, .item.owned .seq { background: var(--ink-soft); color: var(--ink); }
+
+/* 칩 버튼 (입금/출금/매수/매도/상품 선택) */
+.chip-label { font-size: var(--fs-sm); font-weight: 600; margin: 16px 0 8px; }
+.chips { display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px; }
+.chip {
+  min-height: 44px; border-radius: var(--r-chip);
+  background: var(--paper); box-shadow: inset 0 0 0 1px var(--line);
+  font-size: var(--fs-sm); font-weight: 600;
+}
+.chip.primary { background: var(--ink-soft); color: var(--ink); box-shadow: none; }
+.chip:disabled { opacity: .4; }
+.chip:not(:disabled):active { transform: scale(.97); }
+.seg { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 10px; }
+.seg .chip[aria-pressed="true"] { background: var(--text); color: #fff; box-shadow: none; }
+
+/* 저축 / 투자 */
+.big-num { font-size: var(--fs-xl); font-weight: 700; letter-spacing: -0.02em; margin-top: 4px; }
+.kv { display: flex; justify-content: space-between; gap: 12px; font-size: var(--fs-sm); padding: 4px 0; }
+.kv span:first-child { color: var(--sub); }
+.kv span:last-child { font-weight: 600; text-align: right; }
+.up { color: var(--rise); }
+.down { color: var(--ink); }
+.note { font-size: var(--fs-sm); color: var(--sub); margin-top: 12px; }
+canvas.chart { display: block; width: 100%; height: 140px; margin: 12px 0 4px; }
+.chart-legend { display: flex; justify-content: space-between; font-size: 12px; color: var(--sub); }
+
+/* 업적 */
+.ach { display: flex; gap: 12px; align-items: center; padding: 12px 0; border-bottom: 1px solid var(--line); }
+.ach:last-child { border-bottom: 0; }
+.ach-mark {
+  flex: none; width: 28px; height: 28px; border-radius: 50%;
+  display: grid; place-items: center; box-shadow: inset 0 0 0 1.5px var(--line); color: transparent;
+}
+.ach.done .ach-mark { background: var(--ink); color: #fff; box-shadow: none; }
+.ach-mark svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.ach b { display: block; font-size: var(--fs-md); font-weight: 600; }
+.ach:not(.done) b { color: var(--sub); }
+.ach small { font-size: var(--fs-sm); color: var(--sub); }
+.grad-card { background: var(--paper); box-shadow: inset 0 0 0 1.5px var(--line); }
+.grad-card.ready { box-shadow: inset 0 0 0 1.5px var(--ink); }
+.btn {
+  display: flex; align-items: center; justify-content: center; width: 100%;
+  min-height: 52px; border-radius: var(--r-btn);
+  background: var(--ink); color: #fff; font-weight: 700; font-size: var(--fs-md);
+}
+.btn:disabled { background: var(--line); color: var(--sub); }
+.btn.ghost { background: var(--card); color: var(--text); }
+.btn.danger { background: var(--paper); color: var(--rise); box-shadow: inset 0 0 0 1.5px var(--rise); }
+.btn + .btn { margin-top: 8px; }
+
+/* ===== 하단 탭 메뉴 ===== */
+.nav {
+  display: grid; grid-template-columns: repeat(5, 1fr);
+  height: calc(var(--nav-h) + env(safe-area-inset-bottom));
+  padding-bottom: env(safe-area-inset-bottom);
+  border-top: 1px solid var(--line); background: var(--paper);
+}
+.nav button {
+  position: relative; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
+  font-size: 12px; font-weight: 600; color: var(--sub);
+}
+.nav button[aria-selected="true"] { color: var(--ink); }
+.nav .dot {
+  position: absolute; top: 10px; left: calc(50% + 10px);
+  width: 6px; height: 6px; border-radius: 50%; background: var(--ink);
+}
+
+/* ===== 토스트 ===== */
+.toasts {
+  position: absolute; left: var(--gutter); right: var(--gutter);
+  bottom: calc(var(--nav-h) + env(safe-area-inset-bottom) + 12px);
+  display: flex; flex-direction: column; gap: 8px; align-items: center;
+  pointer-events: none; z-index: 30;
+}
+.toast {
+  max-width: 100%; padding: 12px 16px; border-radius: var(--r-btn);
+  background: var(--text); color: #fff; font-size: 14px; font-weight: 600;
+  box-shadow: var(--shadow-float);
+  animation: toastIn .22s ease-out;
+}
+.toast.out { opacity: 0; transform: translateY(6px); transition: opacity .2s, transform .2s; }
+@keyframes toastIn { from { opacity: 0; transform: translateY(8px); } to { opacity: 1; transform: none; } }
+
+/* ===== 모달 (바텀 시트) ===== */
+.overlay {
+  position: absolute; inset: 0; z-index: 40;
+  display: flex; align-items: flex-end;
+  background: rgba(20, 26, 35, 0); transition: background .18s ease;
+}
+.overlay.show { background: rgba(20, 26, 35, 0.45); }
+.sheet {
+  width: 100%; max-height: 92%; overflow-y: auto;
+  background: var(--paper); border-radius: var(--r-sheet) var(--r-sheet) 0 0;
+  padding: 24px var(--gutter) calc(20px + env(safe-area-inset-bottom));
+  transform: translateY(100%); transition: transform .22s ease-out;
+}
+.overlay.show .sheet { transform: none; }
+.sheet h2 { font-size: var(--fs-xl); font-weight: 700; line-height: 1.3; letter-spacing: -0.01em; }
+.sheet .lead { color: var(--sub); margin-top: 6px; }
+.sheet .actions { margin-top: 20px; }
+.sheet-big { font-size: 34px; font-weight: 800; letter-spacing: -0.02em; margin-top: 10px; }
+
+/* 문자 메시지 */
+.sms { margin-top: 16px; padding: 16px; border-radius: var(--r-card); background: var(--card); }
+.sms-from { display: flex; justify-content: space-between; font-size: var(--fs-sm); color: var(--sub); }
+.sms-from b { color: var(--text); font-weight: 700; }
+.bubble {
+  margin-top: 10px; padding: 12px 14px;
+  background: var(--paper); border-radius: 18px 18px 18px 6px;
+  font-size: var(--fs-md); line-height: 1.55; word-break: keep-all;
+}
+.bubble .link { color: var(--ink); text-decoration: underline; word-break: break-all; }
+.answers { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-top: 16px; }
+.answers .btn + .btn { margin-top: 0; }
+.verdict { margin-top: 18px; }
+.verdict h3 { font-size: var(--fs-lg); font-weight: 700; }
+.verdict .delta { font-weight: 700; margin-top: 2px; }
+.verdict p { margin-top: 8px; word-break: keep-all; }
+.clue { margin-top: 10px; padding: 10px 12px; border-radius: var(--r-chip); background: var(--ink-soft); font-size: var(--fs-sm); }
+.clue b { color: var(--ink); }
+.howto { margin: 14px 0 0; padding-left: 20px; }
+.howto li { margin-top: 6px; }
+.stats { margin-top: 16px; padding: 4px 16px; border-radius: var(--r-card); background: var(--card); }
+
+/* 세로가 짧은 화면: 통장 정리 줄은 최신 1줄만 */
+@media (max-height: 760px) {
+  .hero-total { font-size: 34px; }
+  .ledger { min-height: 26px; }
+  .ledger-row + .ledger-row { display: none; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: 1ms !important; transition-duration: 1ms !important; }
+  .float { display: none; }
+}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <h1>용돈 키우기</h1>
+    <button class="icon-btn" id="settingsBtn" aria-label="설정">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 7h9M17 7h3M4 17h3M11 17h9"/><circle cx="15" cy="7" r="2"/><circle cx="9" cy="17" r="2"/></svg>
+    </button>
+  </header>
+
+  <section class="hero" aria-label="내 자산">
+    <p class="hero-label">내 총자산</p>
+    <p class="hero-total num" id="heroTotal">0원</p>
+    <div class="hero-row">
+      <span class="hero-cps num" id="heroCps">초당 +0원</span>
+      <span class="num">쓸 수 있는 현금 <b id="heroCash">0원</b></span>
+    </div>
+    <div class="goal">
+      <div class="goal-row"><span id="goalText">졸업 전 1억 모으기</span><b class="num" id="goalPct">0%</b></div>
+      <div class="bar"><i id="goalBar"></i></div>
+    </div>
+    <div class="ledger num" id="ledger" aria-live="off"><p class="ledger-empty">아래 버튼을 눌러 첫 심부름을 해 보세요.</p></div>
+  </section>
+
+  <div class="tap-zone" id="tapZone">
+    <button class="tap-btn" id="tapBtn">
+      <b>심부름하기</b>
+      <span class="num" id="tapValue">1회 +1,000원</span>
+    </button>
+  </div>
+
+  <main class="content" id="content">
+    <!-- 수입 -->
+    <section data-panel="income">
+      <div class="panel-head">
+        <h2>수입</h2>
+        <p>수입원을 사면 가만히 있어도 돈이 들어와요. 하나 살 때마다 다음 가격은 15%씩 올라요.</p>
+      </div>
+      <div class="stack">
+        <div class="card item" id="tapCard">
+          <div class="item-main">
+            <div class="item-title"><span class="item-name">심부름 요령</span><span class="badge num" id="tapLevel"></span></div>
+            <p class="item-desc">심부름 한 번에 받는 돈이 1,000원씩 늘어요</p>
+            <p class="item-need num" data-need></p>
+          </div>
+          <button class="buy" data-buy-tap><span>구매하기</span><span class="buy-price num" data-price></span></button>
+        </div>
+      </div>
+      <div class="stack section-gap" id="genList"></div>
+    </section>
+
+    <!-- 저축 -->
+    <section data-panel="savings" hidden>
+      <div class="panel-head">
+        <h2>저축</h2>
+        <p>통장에 넣어 둔 돈에는 30초마다 이자가 붙고, 그 이자에도 다시 이자가 붙어요. 이게 복리예요.</p>
+      </div>
+      <div class="card">
+        <h3>씨앗 저축통장</h3>
+        <p class="muted">모아뱅크 (가상)</p>
+        <p class="big-num num" id="savBalance">0원</p>
+        <div class="kv"><span>이자율</span><span class="num" id="savRate">30초마다 1.5%</span></div>
+        <div class="bar"><i id="savBar"></i></div>
+        <div class="kv"><span id="savNextLabel">다음 이자</span><span class="num" id="savNext">입금하면 시작돼요</span></div>
+      </div>
+      <p class="chip-label">입금하기</p>
+      <div class="chips">
+        <button class="chip primary" data-deposit="0.1">현금 10%</button>
+        <button class="chip primary" data-deposit="0.5">현금 50%</button>
+        <button class="chip primary" data-deposit="1">현금 전액</button>
+      </div>
+      <p class="chip-label">출금하기</p>
+      <div class="chips">
+        <button class="chip" data-withdraw="0.1">잔액 10%</button>
+        <button class="chip" data-withdraw="0.5">잔액 50%</button>
+        <button class="chip" data-withdraw="1">잔액 전액</button>
+      </div>
+      <p class="note">출금하면 이번 30초 동안 쌓이던 이자는 받지 못해요. 통장에 있는 돈은 사기 문자에 속아도 안전해요.</p>
+      <div class="card section-gap" id="compoundCard">
+        <h3>복리 미리보기</h3>
+        <div id="compoundBody"></div>
+      </div>
+    </section>
+
+    <!-- 투자 -->
+    <section data-panel="invest" hidden>
+      <div class="panel-head">
+        <h2>투자</h2>
+        <p>가격이 1초마다 오르내려요. 저축보다 더 벌 수도 있지만, 손해를 볼 수도 있어요.</p>
+      </div>
+      <div class="seg" role="tablist" aria-label="투자 상품">
+        <button class="chip" data-asset="fund">모두지수 펀드</button>
+        <button class="chip" data-asset="stock">반짝테크 주식</button>
+      </div>
+      <div class="card">
+        <h3 id="invName"></h3>
+        <p class="muted" id="invDesc"></p>
+        <p class="big-num num" id="invPrice"></p>
+        <p class="num" id="invChange"></p>
+        <canvas class="chart" id="chart" aria-label="최근 2분 가격 그래프" role="img"></canvas>
+        <div class="chart-legend"><span>2분 전</span><span id="avgLegend"></span><span>지금</span></div>
+      </div>
+      <div class="card section-gap">
+        <div class="kv"><span>내가 가진 평가액</span><span class="num" id="invValue">0원</span></div>
+        <div class="kv"><span>평균 매입가</span><span class="num" id="invAvg">-</span></div>
+        <div class="kv"><span>평가 손익</span><span class="num" id="invPnl">-</span></div>
+      </div>
+      <p class="chip-label">매수하기</p>
+      <div class="chips">
+        <button class="chip primary" data-trade="buy" data-frac="0.1">현금 10%</button>
+        <button class="chip primary" data-trade="buy" data-frac="0.5">현금 50%</button>
+        <button class="chip primary" data-trade="buy" data-frac="1">현금 전부</button>
+      </div>
+      <p class="chip-label">매도하기</p>
+      <div class="chips">
+        <button class="chip" data-trade="sell" data-frac="0.1">보유 10%</button>
+        <button class="chip" data-trade="sell" data-frac="0.5">보유 50%</button>
+        <button class="chip" data-trade="sell" data-frac="1">보유 전부</button>
+      </div>
+      <p class="note" id="invTip"></p>
+    </section>
+
+    <!-- 위시리스트 -->
+    <section data-panel="wish" hidden>
+      <div class="panel-head">
+        <h2>위시리스트</h2>
+        <p>내 돈으로 갖고 싶던 물건을 사 보세요. 산 물건은 졸업해도 남고, 영구 보너스를 줘요.</p>
+      </div>
+      <div class="stack" id="wishList"></div>
+    </section>
+
+    <!-- 업적 -->
+    <section data-panel="ach" hidden>
+      <div class="panel-head">
+        <h2>업적</h2>
+        <p id="achSummary"></p>
+      </div>
+      <div class="card grad-card" id="gradCard"></div>
+      <div class="section-gap" id="achList"></div>
+    </section>
+  </main>
+
+  <nav class="nav" role="tablist" aria-label="메뉴">
+    <button role="tab" data-tab="income" aria-selected="true">
+      <svg class="i" viewBox="0 0 24 24"><path d="M4 17l5-5 4 4 7-7"/><path d="M15 9h5v5"/></svg>수입<i class="dot" hidden></i>
+    </button>
+    <button role="tab" data-tab="savings" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24"><rect x="5" y="3.5" width="14" height="17" rx="2.5"/><path d="M9 8.5h6M9 12h6M9 15.5h3"/></svg>저축<i class="dot" hidden></i>
+    </button>
+    <button role="tab" data-tab="invest" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24"><path d="M5 20v-7M12 20V5M19 20v-10"/></svg>투자<i class="dot" hidden></i>
+    </button>
+    <button role="tab" data-tab="wish" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24"><path d="M5.5 8h13l-1.2 12H6.7L5.5 8z"/><path d="M9 8a3 3 0 016 0"/></svg>위시리스트<i class="dot" hidden></i>
+    </button>
+    <button role="tab" data-tab="ach" aria-selected="false">
+      <svg class="i" viewBox="0 0 24 24"><circle cx="12" cy="9" r="5"/><path d="M9.2 13.2L8 20.5l4-2.2 4 2.2-1.2-7.3"/></svg>업적<i class="dot" hidden></i>
+    </button>
+  </nav>
+
+  <div class="toasts" id="toasts" aria-live="polite"></div>
+  <div class="overlay" id="overlay" hidden><div class="sheet" id="sheet" role="dialog" aria-modal="true"></div></div>
+</div>
+
+<script>
+'use strict';
+
+// ===== 1. 밸런스 상수 (가격, 수입, 이자율) =====
+const TICK_MS = 100;                 // 게임 루프 주기
+const GOAL = 1e8;                    // 최종 목표: 졸업 전 1억
+
+const TAP_BASE = 1000;               // 심부름 1회 기본 수익
+const TAP_CPS_SHARE = 0.05;          // 탭 1회에 초당 수입의 5% 추가
+const TAP_SKILL = { baseCost: 25000, growth: 4, bonusPerLevel: 1000 };
+
+const COST_GROWTH = 1.15;            // 수입원 가격 = 기본 가격 × 1.15^보유 개수
+const GENERATORS = [
+  { id: 'allowance', name: '용돈',          desc: '부모님께 정기 용돈 받기',   cost: 15000,      income: 150 },
+  { id: 'store',     name: '편의점 알바',   desc: '주말 편의점 아르바이트',    cost: 100000,     income: 1000 },
+  { id: 'tutor',     name: '과외',          desc: '중학생 수학 과외',          cost: 800000,     income: 6500 },
+  { id: 'channel',   name: '유튜브 채널',   desc: '공부 브이로그 채널 운영',   cost: 6000000,    income: 45000 },
+  { id: 'app',       name: '앱 개발',       desc: '시간표 앱 출시',            cost: 50000000,   income: 350000 },
+  { id: 'startup',   name: '스타트업 창업', desc: '친구들과 교내 창업',        cost: 500000000,  income: 3000000 },
+];
+
+const GEN_MILESTONES = [10, 25, 50, 100];   // 같은 수입원을 이만큼 모으면
+const MILESTONE_MULT = 2;                     // 그 수입원 수입 2배씩
+
+const SAVINGS = { period: 30, rate: 0.015, previewPeriods: 20 };  // 30초마다 1.5% 복리, 미리보기 10분
+
+const ASSET_START_PRICE = 10000;
+const ASSET_MIN_PRICE = 1000;
+const PRICE_HISTORY = 120;           // 그래프에 보여 줄 초
+const MIN_TRADE = 100;               // 최소 거래 금액
+const ASSETS = [
+  { id: 'fund',  name: '모두지수 펀드', desc: '여러 회사에 조금씩 나눠 담은 펀드 (가상)',
+    drift: 0.0005, vol: 0.006, jumpChance: 0, jumpSize: 0,
+    tip: '펀드는 여러 회사에 나눠 담아서 한 회사가 흔들려도 덜 흔들려요. 대신 큰 수익도 드물어요.' },
+  { id: 'stock', name: '반짝테크 주식', desc: '빠르게 크는 회사 한 곳의 주식 (가상)',
+    drift: 0.0009, vol: 0.025, jumpChance: 0.01, jumpSize: 0.12,
+    tip: '한 회사에 몰아서 투자하면 크게 벌 수도, 크게 잃을 수도 있어요. 가끔 하루아침에 12%씩 급등락해요.' },
+];
+
+const PHISHING = { firstDelay: 90, minGap: 120, maxGap: 240, rewardSeconds: 60, minReward: 10000, lossRate: 0.15 };
+
+const WISHLIST = [
+  { name: '무선 이어폰',          cost: 150000,   type: 'tap',      value: 1,     bonus: '탭 수익 2배' },
+  { name: '운동화',               cost: 400000,   type: 'cps',      value: 0.1,   bonus: '초당 수입 +10%' },
+  { name: '태블릿',               cost: 1500000,  type: 'interest', value: 0.005, bonus: '저축 이자율 +0.5%p' },
+  { name: '노트북',               cost: 3000000,  type: 'cps',      value: 0.2,   bonus: '초당 수입 +20%' },
+  { name: '친구들과 제주도 여행', cost: 8000000,  type: 'phishing', value: 1,     bonus: '문자 이벤트 정답 보너스 2배' },
+  { name: '첫 차',                cost: 30000000, type: 'cps',      value: 0.3,   bonus: '초당 수입 +30%' },
+];
+
+const ACHIEVEMENT_BONUS = 0.02;      // 업적 1개당 초당 수입 +2%
+const GRADUATION = { minAssets: 1e8, unit: 1e8, bonusPerDiploma: 0.5 };
+const OFFLINE = { rate: 0.5, maxSeconds: 8 * 3600, minSeconds: 60 };
+const SAVE_KEY = 'yongdon-save-v1';
+const SAVE_INTERVAL = 10;            // 자동 저장 주기(초)
+
+// ===== 2. 게임 상태 & 저장/불러오기 =====
+function newAsset() {
+  return { qty: 0, cost: 0, price: ASSET_START_PRICE, history: [] };
+}
+function newRun() {
+  return {
+    cash: 0,
+    earnedRun: 0,
+    runTime: 0,
+    tapLevel: 0,
+    gens: GENERATORS.map(() => 0),
+    savings: { balance: 0, timer: 0 },
+    invest: { fund: newAsset(), stock: newAsset(), clock: 0 },
+  };
+}
+function newState() {
+  return Object.assign(newRun(), {
+    version: 1,
+    taps: 0,
+    earnedAll: 0,
+    playTime: 0,
+    diplomas: 0,
+    graduations: 0,
+    goalCelebrated: false,
+    wish: WISHLIST.map(() => false),
+    achievements: {},
+    stats: { deposits: 0, interestCount: 0, interestTotal: 0, buys: 0, profitSells: 0 },
+    phishing: { timer: PHISHING.firstDelay, deck: [], seen: 0, correct: 0, fooled: 0 },
+    selectedAsset: 'fund',
+    welcomed: false,
+    savedAt: 0,
+  });
+}
+
+let state = newState();
+
+// 저장된 값 위에 기본값을 깔아 두어, 나중에 항목이 늘어나도 예전 저장을 그대로 불러올 수 있게 함
+function mergeDefaults(base, saved) {
+  if (saved === null || typeof saved !== 'object' || Array.isArray(saved)) return saved === undefined ? base : saved;
+  const out = Array.isArray(base) ? base.slice() : Object.assign({}, base);
+  for (const k of Object.keys(saved)) {
+    const b = base ? base[k] : undefined;
+    out[k] = (b && typeof b === 'object' && !Array.isArray(b)) ? mergeDefaults(b, saved[k]) : saved[k];
+  }
+  return out;
+}
+
+function saveGame() {
+  state.savedAt = Date.now();
+  try { localStorage.setItem(SAVE_KEY, JSON.stringify(state)); } catch (e) { /* 저장 공간이 막힌 브라우저에서도 게임은 계속 */ }
+}
+
+function loadGame() {
+  let raw = null;
+  try { raw = localStorage.getItem(SAVE_KEY); } catch (e) { raw = null; }
+  if (!raw) return false;
+  try {
+    const saved = JSON.parse(raw);
+    state = mergeDefaults(newState(), saved);
+    // 배열 길이 보정 (수입원·위시리스트가 늘어난 경우)
+    state.gens = GENERATORS.map((_, i) => Number(state.gens[i]) || 0);
+    state.wish = WISHLIST.map((_, i) => !!state.wish[i]);
+    return true;
+  } catch (e) {
+    return false;
+  }
+}
+
+function resetGame() {
+  try { localStorage.removeItem(SAVE_KEY); } catch (e) { /* 무시 */ }
+  state = newState();
+  seedPriceHistory();
+  state.welcomed = true;
+  ledger.length = 0;
+  renderLedger(false);
+  buildPanels();
+  counters.forEach(c => c.snap());
+  updateUI(true);
+  saveGame();
+}
+
+// ===== 3. 경제 계산 (수입, 이자, 투자) =====
+const sum = arr => arr.reduce((a, b) => a + b, 0);
+
+function wishBonus(type) {
+  return WISHLIST.reduce((acc, w, i) => acc + (state.wish[i] && w.type === type ? w.value : 0), 0);
+}
+function achievementCount() { return Object.keys(state.achievements).length; }
+function prestigeMult() { return 1 + GRADUATION.bonusPerDiploma * state.diplomas; }
+function cpsMult() {
+  return (1 + wishBonus('cps')) * (1 + ACHIEVEMENT_BONUS * achievementCount()) * prestigeMult();
+}
+function milestoneMult(i) {
+  const reached = GEN_MILESTONES.filter(m => state.gens[i] >= m).length;
+  return Math.pow(MILESTONE_MULT, reached);
+}
+function nextMilestone(i) { return GEN_MILESTONES.find(m => state.gens[i] < m); }
+function genIncome(i) { return GENERATORS[i].income * milestoneMult(i) * cpsMult(); }
+function getCps() {
+  let base = 0;
+  GENERATORS.forEach((g, i) => { base += state.gens[i] * g.income * milestoneMult(i); });
+  return base * cpsMult();
+}
+function tapValue() {
+  const base = TAP_BASE + TAP_SKILL.bonusPerLevel * state.tapLevel;
+  return base * (1 + wishBonus('tap')) * prestigeMult() + getCps() * TAP_CPS_SHARE;
+}
+function genCost(i) { return Math.ceil(GENERATORS[i].cost * Math.pow(COST_GROWTH, state.gens[i])); }
+function tapSkillCost() { return Math.ceil(TAP_SKILL.baseCost * Math.pow(TAP_SKILL.growth, state.tapLevel)); }
+function interestRate() { return SAVINGS.rate + wishBonus('interest'); }
+function assetValue(id) { const a = state.invest[id]; return a.qty * a.price; }
+function investValue() { return ASSETS.reduce((acc, a) => acc + assetValue(a.id), 0); }
+function totalAssets() { return state.cash + state.savings.balance + investValue(); }
+function diplomasIfGraduate() {
+  return Math.max(1, Math.floor(Math.sqrt(state.earnedRun / GRADUATION.unit)));
+}
+function canGraduate() { return totalAssets() >= GRADUATION.minAssets; }
+
+function earn(amount) {
+  state.cash += amount;
+  state.earnedRun += amount;
+  state.earnedAll += amount;
+}
+
+function doTap() {
+  const v = tapValue();
+  earn(v);
+  state.taps++;
+  record('입금', '심부름', v);
+  return v;
+}
+
+function buyGenerator(i) {
+  const c = genCost(i);
+  if (state.cash < c) return false;
+  state.cash -= c;
+  state.gens[i]++;
+  record('구매', GENERATORS[i].name, -c);
+  if (GEN_MILESTONES.includes(state.gens[i])) toast(`${GENERATORS[i].name} ${state.gens[i]}개 달성. ${GENERATORS[i].name} 수입이 2배가 됐어요`);
+  else toast(`${josa(GENERATORS[i].name, '을/를')} 구매했어요. 초당 +${formatWon(genIncome(i))}`);
+  return true;
+}
+
+function buyTapSkill() {
+  const c = tapSkillCost();
+  if (state.cash < c) return false;
+  state.cash -= c;
+  state.tapLevel++;
+  record('구매', '심부름 요령', -c);
+  toast(`심부름 요령을 구매했어요. 이제 1회 +${formatWon(tapValue())}`);
+  return true;
+}
+
+function deposit(frac) {
+  const amt = Math.floor(state.cash * frac);
+  if (amt < MIN_TRADE) return false;
+  state.cash -= amt;
+  state.savings.balance += amt;
+  state.stats.deposits++;
+  record('저축', '씨앗 저축통장', -amt);
+  toast(`${formatWon(amt)}을 입금했어요`);
+  return true;
+}
+
+function withdraw(frac) {
+  const s = state.savings;
+  const amt = frac >= 1 ? s.balance : Math.floor(s.balance * frac);
+  if (amt < 1) return false;
+  s.balance -= amt;
+  if (s.balance < 1) s.balance = 0;
+  state.cash += amt;
+  s.timer = 0; // 중도 출금: 이번 주기 이자 사라짐
+  record('출금', '씨앗 저축통장', amt);
+  toast(`${formatWon(amt)}을 출금했어요. 이번 주기 이자는 다시 시작해요`);
+  return true;
+}
+
+function payInterest() {
+  const s = state.savings;
+  const interest = s.balance * interestRate();
+  s.balance += interest;
+  state.earnedRun += interest;
+  state.earnedAll += interest;
+  state.stats.interestCount++;
+  state.stats.interestTotal += interest;
+  record('이자', '씨앗 저축통장', interest);
+  toast(`이자 ${formatWon(interest)}이 들어왔어요`);
+}
+
+// 정규분포 난수 (Box-Muller)
+function gauss() {
+  let u = 0, v = 0;
+  while (u === 0) u = Math.random();
+  while (v === 0) v = Math.random();
+  return Math.sqrt(-2 * Math.log(u)) * Math.cos(2 * Math.PI * v);
+}
+
+function nextPrice(asset, price) {
+  // 평균 수익률이 drift가 되도록 보정한 로그 정규 변동
+  let p = price * Math.exp(asset.drift - asset.vol * asset.vol / 2 + asset.vol * gauss());
+  let jump = 0;
+  if (asset.jumpChance && Math.random() < asset.jumpChance) {
+    jump = Math.random() < 0.5 ? -1 : 1;
+    p *= 1 + jump * asset.jumpSize;
+  }
+  return { price: Math.max(ASSET_MIN_PRICE, p), jump };
+}
+
+function stepPrices() {
+  for (const a of ASSETS) {
+    const s = state.invest[a.id];
+    const r = nextPrice(a, s.price);
+    s.price = r.price;
+    s.history.push(r.price);
+    if (s.history.length > PRICE_HISTORY) s.history.shift();
+    if (r.jump && s.qty > 0) toast(`${a.name} 가격이 갑자기 ${r.jump > 0 ? '올랐어요' : '내렸어요'} (${r.jump > 0 ? '+' : '-'}${a.jumpSize * 100}%)`);
+  }
+}
+
+function seedPriceHistory() {
+  for (const a of ASSETS) {
+    const s = state.invest[a.id];
+    if (s.history.length >= 2) continue;
+    let p = s.price;
+    s.history = [p];
+    for (let k = 1; k < PRICE_HISTORY; k++) { p = nextPrice(a, p).price; s.history.push(p); }
+    s.price = p;
+  }
+}
+
+function trade(kind, frac) {
+  const meta = ASSETS.find(a => a.id === state.selectedAsset);
+  const s = state.invest[meta.id];
+  if (kind === 'buy') {
+    const amt = Math.floor(state.cash * frac);
+    if (amt < MIN_TRADE) return false;
+    state.cash -= amt;
+    s.qty += amt / s.price;
+    s.cost += amt;
+    state.stats.buys++;
+    record('매수', meta.name, -amt);
+    toast(`${josa(meta.name, '을/를')} ${formatWon(amt)}어치 매수했어요`);
+    return true;
+  }
+  if (s.qty <= 0) return false;
+  const qty = frac >= 1 ? s.qty : s.qty * frac;
+  const proceeds = qty * s.price;
+  const costPart = s.cost * (qty / s.qty);
+  const profit = proceeds - costPart;
+  s.qty -= qty;
+  s.cost -= costPart;
+  if (s.qty < 1e-9) { s.qty = 0; s.cost = 0; }
+  state.cash += proceeds;
+  if (profit > 0) {
+    state.earnedRun += profit;
+    state.earnedAll += profit;
+    state.stats.profitSells++;
+  }
+  record('매도', meta.name, proceeds);
+  toast(`${formatWon(proceeds)}에 매도했어요. ${profit >= 0 ? '수익' : '손실'} ${formatWon(Math.abs(profit))}`);
+  return true;
+}
+
+function buyWish(i) {
+  const w = WISHLIST[i];
+  if (state.wish[i] || (i > 0 && !state.wish[i - 1]) || state.cash < w.cost) return false;
+  state.cash -= w.cost;
+  state.wish[i] = true;
+  record('구매', w.name, -w.cost);
+  toast(`${josa(w.name, '을/를')} 샀어요. 영구 보너스: ${w.bonus}`);
+  return true;
+}
+
+function graduate() {
+  if (!canGraduate()) return false;
+  const got = diplomasIfGraduate();
+  const keep = {
+    taps: state.taps, earnedAll: state.earnedAll, playTime: state.playTime,
+    diplomas: state.diplomas + got, graduations: state.graduations + 1,
+    goalCelebrated: state.goalCelebrated, wish: state.wish, achievements: state.achievements,
+    stats: state.stats, phishing: state.phishing, selectedAsset: state.selectedAsset, welcomed: true,
+  };
+  const prices = { fund: state.invest.fund, stock: state.invest.stock };
+  state = Object.assign(newState(), newRun(), keep);
+  // 시장 가격은 이어지고 보유 수량만 초기화
+  for (const id of ['fund', 'stock']) {
+    state.invest[id].price = prices[id].price;
+    state.invest[id].history = prices[id].history;
+  }
+  ledger.length = 0;
+  renderLedger(false);
+  buildPanels();
+  counters.forEach(c => c.snap());
+  toast(`졸업했어요. 졸업장 ${got}장을 받아 이제 모든 수입이 ${prestigeMult().toFixed(1)}배예요`);
+  saveGame();
+  return true;
+}
+
+// 시간 흐름: dt초만큼 게임을 진행
+function update(dt) {
+  const cps = getCps();
+  if (cps > 0) earn(cps * dt);
+  state.runTime += dt;
+  state.playTime += dt;
+
+  const s = state.savings;
+  if (s.balance > 0) {
+    s.timer += dt;
+    while (s.timer >= SAVINGS.period) { s.timer -= SAVINGS.period; payInterest(); }
+  } else {
+    s.timer = 0;
+  }
+
+  state.invest.clock += dt;
+  while (state.invest.clock >= 1) { state.invest.clock -= 1; stepPrices(); chartDirty = true; }
+
+  if (!modalBusy()) {
+    state.phishing.timer -= dt;
+    if (state.phishing.timer <= 0) showPhishing();
+  }
+
+  checkAchievements();
+  checkGoal();
+}
+
+// 오프라인 수익: 비운 시간(최대 8시간) × 초당 수입 × 50%
+function applyOffline(sinceMs) {
+  if (!sinceMs) return;
+  const away = Math.min((Date.now() - sinceMs) / 1000, OFFLINE.maxSeconds);
+  if (away < OFFLINE.minSeconds) return;
+  const cps = getCps();
+  if (cps <= 0) return;
+  const gained = cps * away * OFFLINE.rate;
+  earn(gained);
+  record('입금', '자리 비운 동안', gained);
+  const capped = (Date.now() - sinceMs) / 1000 > OFFLINE.maxSeconds;
+  openModal((el, close) => {
+    el.innerHTML = `
+      <h2>자리 비운 동안<br>${formatWon(gained)} 벌었어요</h2>
+      <p class="lead">${formatDuration(away)} 동안 초당 수입의 절반이 들어왔어요.${capped ? ' 최대 8시간까지만 계산해요.' : ''}</p>
+      <p class="note">저축 이자와 투자 가격은 게임을 켜 둔 동안만 움직여요.</p>
+      <div class="actions"><button class="btn" data-close>확인</button></div>`;
+    el.querySelector('[data-close]').onclick = close;
+  });
+}
+
+// ===== 4. 보이스피싱 이벤트 데이터 =====
+// type: 'scam'(사기) | 'real'(정상). 모든 기관·회사 이름은 가상
+const PHISHING_MESSAGES = [
+  { type: 'scam', from: '010-4821-3390', text: '[다온택배] 고객님의 택배가 주소 불일치로 보관 중입니다. 아래 링크에서 주소를 확인해 주세요.', link: 'http://daon-dlv.top/k3q9',
+    explain: '택배사는 개인 휴대폰 번호로 주소 확인 링크를 보내지 않아요. 이런 링크를 누르면 개인정보를 빼가거나 악성 앱이 깔릴 수 있어요.',
+    clue: '개인 번호에서 온 문자 + 처음 보는 인터넷 주소' },
+  { type: 'scam', from: '010-9172-5530', text: '엄마야. 폰 액정이 깨져서 임시폰으로 연락해. 급하게 문화상품권 10만 원어치만 사서 핀번호 사진 찍어 보내 줄래?', link: null,
+    explain: '가족인 척 상품권이나 송금을 요구하는 메신저 피싱이에요. 원래 알던 번호로 직접 전화해서 확인하면 바로 알 수 있어요.',
+    clue: '모르는 번호 + 가족 사칭 + 상품권 핀번호 요구' },
+  { type: 'scam', from: '010-7730-2186', text: '[○○지방검찰청] 귀하의 계좌가 금융범죄에 연루되어 동결될 예정입니다. 자산 보호를 위해 지정된 안전계좌로 즉시 이체 바랍니다.', link: null,
+    explain: '검찰, 경찰, 금융기관은 절대로 돈을 다른 계좌로 옮기라고 하지 않아요. "안전계좌"라는 말 자체가 사기의 신호예요.',
+    clue: '수사기관 사칭 + 안전계좌로 이체 요구' },
+  { type: 'scam', from: '02-3470-1188', text: '[Web발신] [모아뱅크] 고객님은 저금리 대환대출 승인 대상입니다. 진행을 위해 기존 대출 상환금 50만 원을 아래 계좌로 먼저 입금해 주세요.', link: null,
+    explain: '정상적인 금융회사는 돈을 빌려주기 전에 돈을 먼저 보내라고 하지 않아요. 문자에 은행 이름이 적혀 있어도 얼마든지 꾸밀 수 있어요.',
+    clue: '대출 전에 돈을 먼저 보내라는 요구' },
+  { type: 'scam', from: '010-5512-9047', text: '[무료초대] 원금 보장! 하루 수익 30% 코인 리딩방. 지금 참여하면 첫 투자금 2배 지원해 드려요.', link: 'open-talk.link/rich30',
+    explain: '원금을 지키면서 높은 수익까지 주는 투자는 없어요. 투자에서 높은 수익은 언제나 큰 위험과 함께 와요. 투자 탭에서 직접 확인해 보세요.',
+    clue: '"원금 보장"과 "고수익"을 동시에 약속' },
+  { type: 'scam', from: '국제발신 +1 213-555-0198', text: '[국제발신] 해외 온라인몰 결제 승인 985,000원. 본인이 아니면 고객센터 070-4436-2290으로 즉시 연락 바랍니다.', link: null,
+    explain: '결제한 적 없는 문자로 겁을 줘서 전화를 걸게 만들고, 상담원인 척 원격 조종 앱을 깔게 하는 수법이에요. 결제 내역은 카드사 공식 앱에서 직접 확인하세요.',
+    clue: '국제발신 + 큰 금액 결제 + 전화 걸라고 유도' },
+  { type: 'scam', from: '010-2291-6604', text: '학생 알바 구해요! 하는 일 없이 통장이랑 체크카드만 일주일 빌려주면 하루 10만 원 드려요. 비밀 보장합니다.', link: null,
+    explain: '통장을 빌려주면 범죄에 쓰이는 대포통장이 되고, 빌려준 사람도 처벌받아요. 일은 쉬운데 돈을 많이 주는 알바는 먼저 의심하세요.',
+    clue: '통장과 카드를 빌려 달라는 요구' },
+  { type: 'scam', from: '010-6650-3318', text: '모바일 청첩장이 도착했습니다. 저희 결혼식에 꼭 와 주세요! 장소 확인하기', link: 'http://mcard-invite.xyz/w8',
+    explain: '지인의 결혼 소식인 척 링크를 누르게 해서 악성 앱을 설치하는 스미싱이에요. 보낸 사람에게 직접 확인하기 전에는 누르지 마세요.',
+    clue: '모르는 번호 + 확인되지 않은 링크' },
+  { type: 'real', from: '1588-7700 (모아뱅크 대표번호)', text: '[모아뱅크] 인증번호 [482913]를 입력해 주세요. 타인에게 절대 알려 주지 마세요.', link: null,
+    explain: '방금 내가 앱에서 요청한 인증번호라면 정상 문자예요. 링크가 없고, 남에게 알려 주지 말라고 안내해요. 단, 누가 이 번호를 물어본다면 그건 사기예요.',
+    clue: '링크 없음 + 인증번호를 알려 주지 말라는 안내' },
+  { type: 'real', from: '031-555-2100 (새봄고 교무실)', text: '[새봄고] 내일(목) 3교시 후 단축수업 예정입니다. 자세한 내용은 학교 알림 앱의 가정통신문을 확인해 주세요.', link: null,
+    explain: '돈이나 개인정보를 요구하지 않고 공지만 알려 줘요. 링크 대신 원래 쓰던 공식 앱에서 확인하라고 안내하는 것도 정상 문자의 특징이에요.',
+    clue: '돈·개인정보 요구 없음 + 공식 앱으로 확인 안내' },
+  { type: 'real', from: '1544-3300 (누리카드 대표번호)', text: '[누리카드] 회원님 15,000원 승인 (새봄편의점) 10/16 15:42 누적 128,400원', link: null,
+    explain: '내가 실제로 쓴 결제를 알려 주는 문자예요. 링크도 없고 전화하라고 재촉하지도 않아요. 쓴 적 없는 결제라면 카드사 공식 앱에서 확인하면 돼요.',
+    clue: '내가 쓴 결제 내역 + 링크·전화 유도 없음' },
+  { type: 'real', from: '1600-2400 (다온택배 대표번호)', text: '[다온택배] 고객님의 상품이 오늘 14~16시 사이 도착 예정입니다. 문 앞에 두고 갈게요.', link: null,
+    explain: '배송 일정만 알려 주고 링크 클릭이나 주소·개인정보 입력을 요구하지 않아요. 주소를 다시 입력하라는 택배 문자와 비교해 보세요.',
+    clue: '대표번호 발신 + 링크·개인정보 요구 없음' },
+];
+const SAFETY_TIP = '의심되면 링크를 누르지 말고, 공식 앱이나 대표번호로 직접 확인하세요.';
+
+function shuffle(arr) {
+  for (let i = arr.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [arr[i], arr[j]] = [arr[j], arr[i]]; }
+  return arr;
+}
+
+function showPhishing(forcedIndex) {
+  const p = state.phishing;
+  p.timer = PHISHING.minGap + Math.random() * (PHISHING.maxGap - PHISHING.minGap);
+  if (!p.deck.length) p.deck = shuffle(PHISHING_MESSAGES.map((_, i) => i));
+  const idx = forcedIndex !== undefined ? forcedIndex : p.deck.pop();
+  const m = PHISHING_MESSAGES[idx];
+  p.seen++;
+
+  openModal((el, close) => {
+    el.innerHTML = `
+      <h2>새 문자가 왔어요.<br>믿어도 될까요?</h2>
+      <div class="sms">
+        <div class="sms-from"><b>${m.from}</b><span>방금</span></div>
+        <div class="bubble">${m.text}${m.link ? `<br><span class="link">${m.link}</span>` : ''}</div>
+      </div>
+      <div class="answers" data-answers>
+        <button class="btn ghost" data-answer="scam">사기 문자 같아요</button>
+        <button class="btn ghost" data-answer="real">정상 문자예요</button>
+      </div>
+      <div data-result></div>`;
+    el.querySelectorAll('[data-answer]').forEach(btn => {
+      btn.onclick = () => {
+        const pick = btn.dataset.answer;
+        const correct = pick === m.type;
+        let title, delta = '', deltaClass = '';
+        if (correct) {
+          const reward = Math.max(getCps() * PHISHING.rewardSeconds, PHISHING.minReward) * (1 + wishBonus('phishing'));
+          earn(reward);
+          p.correct++;
+          record('입금', '문자 판별 보너스', reward);
+          title = m.type === 'scam' ? '정답이에요. 사기 문자예요' : '정답이에요. 정상 문자예요';
+          delta = `보너스 +${formatWon(reward)}`;
+          deltaClass = 'down';
+        } else if (m.type === 'scam') {
+          const loss = Math.floor(state.cash * PHISHING.lossRate);
+          state.cash -= loss;
+          p.fooled++;
+          record('피해', '사기 문자', -loss);
+          title = '속았어요. 사기 문자였어요';
+          delta = loss > 0 ? `현금 ${formatWon(loss)}을 잃었어요. 통장과 투자금은 안전해요` : '현금이 없어서 잃은 돈은 없어요';
+          deltaClass = 'up';
+        } else {
+          title = '정상 문자였어요';
+          delta = '잃은 돈은 없어요. 의심하는 습관은 좋아요';
+        }
+        el.querySelector('[data-answers]').remove();
+        el.querySelector('[data-result]').innerHTML = `
+          <div class="verdict">
+            <h3>${title}</h3>
+            <p class="delta ${deltaClass}">${delta}</p>
+            <p>${m.explain}</p>
+            <div class="clue"><b>핵심 단서</b> ${m.clue}</div>
+            <p class="note">${SAFETY_TIP}</p>
+          </div>
+          <div class="actions"><button class="btn" data-close>확인</button></div>`;
+        const ok = el.querySelector('[data-close]');
+        ok.onclick = close;
+        ok.focus();
+      };
+    });
+  }, { dismissable: false });
+}
+
+// ===== 5. 화면 그리기 & 애니메이션 =====
+const $ = (sel, root = document) => root.querySelector(sel);
+const $$ = (sel, root = document) => Array.from(root.querySelectorAll(sel));
+const reduceMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// 한국식 금액 표기: 1,234원 → 1.2만 원 → 3.4억 원 → 5.6조 원
+function formatWon(n) {
+  if (!isFinite(n)) n = 0;
+  const neg = n < 0;
+  const abs = Math.floor(Math.abs(n));
+  let out;
+  if (abs < 1e4) {
+    out = abs.toLocaleString('ko-KR') + '원';
+  } else {
+    const units = [[1e16, '경'], [1e12, '조'], [1e8, '억'], [1e4, '만']];
+    const [u, name] = units.find(([v]) => abs >= v);
+    const v = abs / u;
+    const shown = v >= 1000 ? Math.floor(v).toLocaleString('ko-KR') : (Math.floor(v * 10) / 10).toLocaleString('ko-KR', { maximumFractionDigits: 1 });
+    out = shown + name + ' 원';
+  }
+  return (neg ? '-' : '') + out;
+}
+
+// 받침에 따라 조사 고르기: josa('용돈', '을/를') → '용돈을'
+function josa(word, pair) {
+  const [withFinal, without] = pair.split('/');
+  const ch = word.trim().slice(-1);
+  const code = ch.charCodeAt(0) - 0xAC00;
+  const hasFinal = code >= 0 && code <= 11171 ? code % 28 !== 0 : '013678'.includes(ch);
+  return word + (hasFinal ? withFinal : without);
+}
+
+function formatDuration(sec) {
+  sec = Math.floor(sec);
+  const h = Math.floor(sec / 3600), m = Math.floor((sec % 3600) / 60), s = sec % 60;
+  if (h) return `${h}시간${m ? ` ${m}분` : ''}`;
+  if (m) return `${m}분${s ? ` ${s}초` : ''}`;
+  return `${s}초`;
+}
+
+// 카운트업: 표시값이 실제값을 부드럽게 따라감
+class Counter {
+  constructor(el, fmt, get) { this.el = el; this.fmt = fmt; this.get = get; this.shown = get(); this.last = ''; }
+  snap() { this.shown = this.get(); this.paint(); }
+  step(dt) {
+    const target = this.get();
+    if (reduceMotion || !isFinite(this.shown)) this.shown = target;
+    const diff = target - this.shown;
+    if (Math.abs(diff) < Math.max(1, Math.abs(target) * 1e-4)) this.shown = target;
+    else this.shown += diff * Math.min(1, dt * 12);
+    this.paint();
+  }
+  paint() { const t = this.fmt(this.shown); if (t !== this.last) { this.el.textContent = t; this.last = t; } }
+}
+let counters = [];
+
+// 통장 정리 줄: 최근 거래 2줄
+const ledger = [];
+function record(kind, memo, amount) {
+  const now = performance.now();
+  const last = ledger[0];
+  if (last && last.kind === kind && last.memo === memo && now - last.t < 1500 && kind === '입금') {
+    last.amount += amount; last.count++; last.t = now;
+    renderLedger(false);
+    return;
+  }
+  ledger.unshift({ kind, memo, amount, t: now, count: 1 });
+  if (ledger.length > 2) ledger.length = 2;
+  renderLedger(true);
+}
+function renderLedger(printNew) {
+  const el = $('#ledger');
+  if (!ledger.length) { el.innerHTML = '<p class="ledger-empty">아래 버튼을 눌러 첫 심부름을 해 보세요.</p>'; return; }
+  el.innerHTML = ledger.map((r, i) => {
+    const memo = r.count > 1 ? `${r.memo} ${r.count}회` : r.memo;
+    const cls = r.amount < 0 ? (r.kind === '피해' ? 'loss' : 'minus') : '';
+    const sign = r.amount < 0 ? '-' : '+';
+    return `<div class="ledger-row${i === 0 && printNew && !reduceMotion ? ' print' : ''}"><span>${r.kind}</span><span>${memo}</span><span class="amt ${cls}">${sign}${formatWon(Math.abs(r.amount))}</span></div>`;
+  }).join('');
+}
+
+// 토스트
+function toast(msg) {
+  const wrap = $('#toasts');
+  while (wrap.children.length >= 2) wrap.firstElementChild.remove();
+  const t = document.createElement('div');
+  t.className = 'toast';
+  t.textContent = msg;
+  wrap.appendChild(t);
+  setTimeout(() => { t.classList.add('out'); setTimeout(() => t.remove(), 220); }, 2200);
+}
+
+// 모달 (한 번에 하나, 나머지는 대기)
+let usingKeyboard = false;
+document.addEventListener('keydown', e => { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ') usingKeyboard = true; });
+document.addEventListener('pointerdown', () => { usingKeyboard = false; });
+const modalQueue = [];
+let modalOpen = false;
+let modalDismissable = true;
+let modalCloser = null;
+function modalBusy() { return modalOpen; }
+function openModal(build, opts = {}) {
+  if (modalOpen) { modalQueue.push([build, opts]); return; }
+  modalOpen = true;
+  modalDismissable = opts.dismissable !== false;
+  const overlay = $('#overlay'), sheet = $('#sheet');
+  sheet.innerHTML = '';
+  overlay.hidden = false;
+  const close = () => {
+    if (!modalOpen || modalCloser !== close) return;
+    modalCloser = null;
+    overlay.classList.remove('show');
+    setTimeout(() => {
+      overlay.hidden = true;
+      sheet.innerHTML = '';
+      modalOpen = false;
+      if (modalQueue.length) { const [b, o] = modalQueue.shift(); openModal(b, o); }
+    }, 200);
+  };
+  modalCloser = close;
+  build(sheet, close);
+  requestAnimationFrame(() => {
+    overlay.classList.add('show');
+    const first = sheet.querySelector('button');
+    if (first && usingKeyboard) first.focus({ preventScroll: true });
+  });
+}
+
+// 업적
+const ACHIEVEMENTS = [
+  { id: 'tap1',    name: '첫 심부름',             desc: '심부름하기를 처음 눌러요',          check: () => state.taps >= 1 },
+  { id: 'tap500',  name: '성실한 심부름꾼',       desc: '심부름 500회',                      check: () => state.taps >= 500 },
+  { id: 'gen1',    name: '첫 월급',               desc: '수입원을 처음 사요',                check: () => sum(state.gens) >= 1 },
+  { id: 'gen50',   name: '일당백',                desc: '수입원을 모두 합쳐 50개 가져요',    check: () => sum(state.gens) >= 50 },
+  { id: 'save1',   name: '저축 시작',             desc: '통장에 처음 입금해요',              check: () => state.stats.deposits >= 1 },
+  { id: 'int10',   name: '이자의 맛',             desc: '이자를 10번 받아요',                check: () => state.stats.interestCount >= 10 },
+  { id: 'inv1',    name: '첫 투자',               desc: '투자 상품을 처음 사요',             check: () => state.stats.buys >= 1 },
+  { id: 'profit',  name: '수익 실현',             desc: '산 가격보다 비싸게 팔아요',         check: () => state.stats.profitSells >= 1 },
+  { id: 'phish5',  name: '사기 감별사',           desc: '문자 이벤트를 5번 맞혀요',          check: () => state.phishing.correct >= 5 },
+  { id: 'wish1',   name: '내 돈으로 산 첫 물건',  desc: '위시리스트 물건을 처음 사요',       check: () => state.wish[0] },
+  { id: 'wishAll', name: '위시리스트 완성',       desc: '위시리스트 6개를 모두 사요',        check: () => state.wish.every(Boolean) },
+  { id: 'a1e4',    name: '만 원의 행복',          desc: '총자산 1만 원',                     check: () => totalAssets() >= 1e4 },
+  { id: 'a1e6',    name: '백만 원 돌파',          desc: '총자산 100만 원',                   check: () => totalAssets() >= 1e6 },
+  { id: 'a1e7',    name: '천만 원 돌파',          desc: '총자산 1,000만 원',                 check: () => totalAssets() >= 1e7 },
+  { id: 'a1e8',    name: '1억 달성',              desc: '총자산 1억 원',                     check: () => totalAssets() >= 1e8 },
+  { id: 'grad1',   name: '첫 졸업',               desc: '처음으로 졸업해요',                 check: () => state.graduations >= 1 },
+];
+
+function checkAchievements() {
+  for (const a of ACHIEVEMENTS) {
+    if (!state.achievements[a.id] && a.check()) {
+      state.achievements[a.id] = Date.now();
+      toast(`업적 달성: ${a.name}. 초당 수입 +2%`);
+      achDirty = true;
+    }
+  }
+}
+
+// 1억 첫 달성: 게임에서 단 한 번 나오는 큰 연출
+function checkGoal() {
+  if (state.goalCelebrated || totalAssets() < GOAL) return;
+  state.goalCelebrated = true;
+  const p = state.phishing;
+  openModal((el, close) => {
+    el.innerHTML = `
+      <p class="muted">${formatDuration(state.runTime)} 만에</p>
+      <h2>졸업 전 1억, 해냈어요</h2>
+      <p class="sheet-big num" data-goal-count>0원</p>
+      <div class="stats">
+        <div class="kv"><span>받은 이자</span><span class="num">${formatWon(state.stats.interestTotal)} (${state.stats.interestCount}번)</span></div>
+        <div class="kv"><span>문자 판별</span><span class="num">${p.seen}번 중 ${p.correct}번 정답</span></div>
+        <div class="kv"><span>심부름</span><span class="num">${state.taps.toLocaleString('ko-KR')}번</span></div>
+      </div>
+      <p class="note">업적 탭에서 졸업하면 처음부터 다시 시작하지만, 모든 수입이 영구로 늘어나요.</p>
+      <div class="actions"><button class="btn" data-close>계속 모으기</button><button class="btn ghost" data-go-grad>졸업하러 가기</button></div>`;
+    el.querySelector('[data-close]').onclick = close;
+    el.querySelector('[data-go-grad]').onclick = () => { close(); switchTab('ach'); };
+    const numEl = el.querySelector('[data-goal-count]');
+    const start = performance.now(), dur = reduceMotion ? 1 : 1200;
+    const anim = now => {
+      const t = Math.min(1, (now - start) / dur);
+      const eased = 1 - Math.pow(1 - t, 3);
+      numEl.textContent = formatWon(GOAL * eased);
+      if (t < 1) requestAnimationFrame(anim);
+    };
+    requestAnimationFrame(anim);
+  });
+}
+
+// 패널 만들기 (구조), 갱신은 updateUI에서
+let currentTab = 'income';
+let chartDirty = true;
+let achDirty = true;
+const readyCards = new WeakSet();
+
+function buildPanels() {
+  $('#genList').innerHTML = GENERATORS.map((g, i) => `
+    <div class="card item" data-gen="${i}">
+      <div class="item-main">
+        <div class="item-title"><span class="item-name">${g.name}</span><span class="badge num" data-count></span></div>
+        <p class="item-desc">${g.desc}</p>
+        <p class="item-yield num" data-yield></p>
+        <p class="item-need num" data-need></p>
+      </div>
+      <button class="buy" data-buy-gen="${i}"><span>구매하기</span><span class="buy-price num" data-price></span></button>
+    </div>`).join('') + '<div class="card locked" id="genLocked"></div>';
+
+  $('#wishList').innerHTML = WISHLIST.map((w, i) => `
+    <div class="card item" data-wish-card="${i}">
+      <span class="seq">${i + 1}</span>
+      <div class="item-main">
+        <div class="item-title"><span class="item-name">${w.name}</span></div>
+        <p class="item-desc">영구 보너스: ${w.bonus}</p>
+        <p class="item-need num" data-need></p>
+      </div>
+      <button class="buy" data-buy-wish="${i}"><span data-label>구매하기</span><span class="buy-price num" data-price>${formatWon(w.cost)}</span></button>
+    </div>`).join('');
+  achDirty = true;
+  chartDirty = true;
+}
+
+function setBuyState(card, can, price, needText) {
+  const btn = card.querySelector('.buy');
+  const was = card.classList.contains('can');
+  card.classList.toggle('can', can);
+  card.classList.toggle('off', !can);
+  btn.disabled = !can;
+  const priceEl = card.querySelector('[data-price]');
+  const pt = formatWon(price);
+  if (priceEl.textContent !== pt) priceEl.textContent = pt;
+  const need = card.querySelector('[data-need]');
+  const nt = can ? '' : needText;
+  if (need && need.textContent !== nt) need.textContent = nt;
+  // 살 수 있게 된 순간 한 번만 살짝 강조
+  if (can && !was && readyCards.has(card)) {
+    card.classList.remove('ready'); void card.offsetWidth; card.classList.add('ready');
+  }
+  readyCards.add(card);
+}
+const needText = price => `${formatWon(price - state.cash)} 더 모으면 살 수 있어요`;
+
+function updateIncome() {
+  const cash = state.cash;
+  const tc = tapSkillCost();
+  setBuyState($('#tapCard'), cash >= tc, tc, needText(tc));
+  $('#tapLevel').textContent = state.tapLevel ? `${state.tapLevel}단계` : '';
+
+  let lockedShown = false;
+  $$('#genList [data-gen]').forEach(card => {
+    const i = Number(card.dataset.gen);
+    const visible = i === 0 || state.gens[i - 1] > 0 || state.gens[i] > 0;
+    card.hidden = !visible;
+    if (!visible) {
+      if (!lockedShown) {
+        lockedShown = true;
+        $('#genLocked').hidden = false;
+        $('#genLocked').textContent = `다음 수입원은 ${josa(GENERATORS[i - 1].name, '을/를')} 1개 사면 공개돼요`;
+      }
+      return;
+    }
+    const c = genCost(i);
+    card.querySelector('[data-count]').textContent = state.gens[i] ? `${state.gens[i]}개` : '';
+    const nm = nextMilestone(i);
+    card.querySelector('[data-yield]').textContent = `1개당 초당 +${formatWon(genIncome(i))}` + (nm ? `, ${nm}개면 2배` : '');
+    setBuyState(card, cash >= c, c, needText(c));
+  });
+  if (!lockedShown) $('#genLocked').hidden = true;
+}
+
+function updateSavings() {
+  const s = state.savings;
+  const r = interestRate();
+  $('#savRate').textContent = `30초마다 ${(r * 100).toFixed(1)}%`;
+  const has = s.balance > 0;
+  $('#savBar').style.width = has ? `${(s.timer / SAVINGS.period) * 100}%` : '0%';
+  $('#savNext').textContent = has ? `${Math.ceil(SAVINGS.period - s.timer)}초 뒤 +${formatWon(s.balance * r)}` : '입금하면 시작돼요';
+  $$('[data-deposit]').forEach(b => { b.disabled = Math.floor(state.cash * Number(b.dataset.deposit)) < MIN_TRADE; });
+  $$('[data-withdraw]').forEach(b => { b.disabled = !has; });
+
+  const n = SAVINGS.previewPeriods;
+  let html;
+  if (has) {
+    const comp = s.balance * Math.pow(1 + r, n);
+    const simple = s.balance * (1 + r * n);
+    html = `
+      <div class="kv"><span>그대로 두면 10분 뒤</span><span class="num">${formatWon(comp)}</span></div>
+      <div class="kv"><span>단리였다면</span><span class="num">${formatWon(simple)}</span></div>
+      <p class="note">이자에 이자가 붙는 복리 덕분에 ${formatWon(comp - simple)}을 더 받아요. 오래 둘수록 차이가 커져요.</p>
+      <div class="kv"><span>지금까지 받은 이자</span><span class="num">${formatWon(state.stats.interestTotal)} (${state.stats.interestCount}번)</span></div>`;
+  } else {
+    html = '<p class="note">현금을 넣어 두면 30초마다 이자가 붙어요. 이자에도 다시 이자가 붙어서, 오래 둘수록 빨리 불어나요.</p>';
+  }
+  const body = $('#compoundBody');
+  if (body.dataset.html !== html) { body.innerHTML = html; body.dataset.html = html; }
+}
+
+function updateInvest() {
+  const meta = ASSETS.find(a => a.id === state.selectedAsset);
+  const s = state.invest[meta.id];
+  $$('[data-asset]').forEach(b => b.setAttribute('aria-pressed', String(b.dataset.asset === meta.id)));
+  $('#invName').textContent = meta.name;
+  $('#invDesc').textContent = meta.desc;
+  $('#invPrice').textContent = formatWon(s.price);
+  const first = s.history[0] || s.price;
+  const ch = (s.price / first - 1) * 100;
+  const chEl = $('#invChange');
+  chEl.textContent = `최근 2분 ${ch >= 0 ? '+' : ''}${ch.toFixed(1)}%`;
+  chEl.className = 'num ' + (ch >= 0 ? 'up' : 'down');
+  const value = s.qty * s.price;
+  const avg = s.qty > 0 ? s.cost / s.qty : 0;
+  const pnl = value - s.cost;
+  $('#invAvg').textContent = s.qty > 0 ? formatWon(avg) : '-';
+  const pnlEl = $('#invPnl');
+  if (s.qty > 0) {
+    pnlEl.textContent = `${pnl >= 0 ? '+' : ''}${formatWon(pnl)} (${pnl >= 0 ? '+' : ''}${((pnl / s.cost) * 100).toFixed(1)}%)`;
+    pnlEl.className = 'num ' + (pnl >= 0 ? 'up' : 'down');
+  } else { pnlEl.textContent = '-'; pnlEl.className = 'num'; }
+  $('#avgLegend').textContent = s.qty > 0 ? '점선: 평균 매입가' : '';
+  $$('[data-trade="buy"]').forEach(b => { b.disabled = Math.floor(state.cash * Number(b.dataset.frac)) < MIN_TRADE; });
+  $$('[data-trade="sell"]').forEach(b => { b.disabled = s.qty <= 0; });
+  $('#invTip').textContent = meta.tip + ' 상승은 빨강, 하락은 파랑으로 표시해요.';
+  if (chartDirty) { drawChart(); chartDirty = false; }
+}
+
+let chartColors = null;
+function drawChart() {
+  const c = $('#chart');
+  const w = c.clientWidth, h = c.clientHeight;
+  if (!w || !h) return;
+  const dpr = window.devicePixelRatio || 1;
+  if (c.width !== Math.round(w * dpr)) { c.width = Math.round(w * dpr); c.height = Math.round(h * dpr); }
+  const ctx = c.getContext('2d');
+  ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  ctx.clearRect(0, 0, w, h);
+  if (!chartColors) {
+    const cs = getComputedStyle(document.documentElement);
+    chartColors = { ink: cs.getPropertyValue('--ink').trim(), rise: cs.getPropertyValue('--rise').trim(), sub: cs.getPropertyValue('--sub').trim(), line: cs.getPropertyValue('--line').trim() };
+  }
+  const s = state.invest[state.selectedAsset];
+  const hist = s.history;
+  if (hist.length < 2) return;
+  const avg = s.qty > 0 ? s.cost / s.qty : null;
+  let lo = Math.min(...hist), hi = Math.max(...hist);
+  if (avg) { lo = Math.min(lo, avg); hi = Math.max(hi, avg); }
+  const pad = (hi - lo) * 0.12 || hi * 0.01;
+  lo -= pad; hi += pad;
+  const x = i => (i / (PRICE_HISTORY - 1)) * (w - 8) + 4;
+  const y = v => h - 4 - ((v - lo) / (hi - lo)) * (h - 8);
+  const offset = PRICE_HISTORY - hist.length;
+
+  ctx.strokeStyle = chartColors.line; ctx.lineWidth = 1;
+  ctx.beginPath(); ctx.moveTo(0, h - 0.5); ctx.lineTo(w, h - 0.5); ctx.stroke();
+  if (avg) {
+    ctx.setLineDash([4, 4]); ctx.strokeStyle = chartColors.sub;
+    ctx.beginPath(); ctx.moveTo(0, y(avg)); ctx.lineTo(w, y(avg)); ctx.stroke();
+    ctx.setLineDash([]);
+  }
+  const color = hist[hist.length - 1] >= hist[0] ? chartColors.rise : chartColors.ink;
+  ctx.strokeStyle = color; ctx.lineWidth = 2; ctx.lineJoin = 'round';
+  ctx.beginPath();
+  hist.forEach((v, i) => { const px = x(i + offset), py = y(v); i ? ctx.lineTo(px, py) : ctx.moveTo(px, py); });
+  ctx.stroke();
+  const lx = x(hist.length - 1 + offset), ly = y(hist[hist.length - 1]);
+  ctx.fillStyle = color; ctx.beginPath(); ctx.arc(lx, ly, 3.5, 0, Math.PI * 2); ctx.fill();
+}
+
+function updateWish() {
+  $$('#wishList [data-wish-card]').forEach(card => {
+    const i = Number(card.dataset.wishCard);
+    const w = WISHLIST[i];
+    const owned = state.wish[i];
+    const unlocked = i === 0 || state.wish[i - 1];
+    card.classList.toggle('owned', owned);
+    const label = card.querySelector('[data-label]');
+    if (owned) {
+      card.classList.remove('can', 'off');
+      card.querySelector('.buy').disabled = true;
+      label.textContent = '샀어요';
+      card.querySelector('[data-need]').textContent = '';
+    } else if (!unlocked) {
+      card.classList.remove('can'); card.classList.add('off');
+      card.querySelector('.buy').disabled = true;
+      label.textContent = '구매하기';
+      card.querySelector('[data-need]').textContent = '앞의 물건을 먼저 사야 해요';
+    } else {
+      label.textContent = '구매하기';
+      setBuyState(card, state.cash >= w.cost, w.cost, needText(w.cost));
+    }
+  });
+}
+
+function updateAch() {
+  const n = achievementCount();
+  $('#achSummary').textContent = `업적 ${ACHIEVEMENTS.length}개 중 ${n}개 달성, 초당 수입 +${Math.round(n * ACHIEVEMENT_BONUS * 100)}%. 업적과 위시리스트는 졸업해도 남아요.`;
+  const ready = canGraduate();
+  const card = $('#gradCard');
+  card.classList.toggle('ready', ready);
+  const pct = Math.min(100, (totalAssets() / GRADUATION.minAssets) * 100);
+  const got = diplomasIfGraduate();
+  const html = `
+    <h3>졸업하기</h3>
+    <p class="muted">총자산 1억을 모으면 졸업할 수 있어요. 처음부터 다시 시작하지만 모든 수입이 영구로 늘어나요.</p>
+    <div class="kv" style="margin-top:8px"><span>가진 졸업장</span><span class="num">${state.diplomas}장 (수입 ${prestigeMult().toFixed(1)}배)</span></div>
+    ${ready
+      ? `<div class="kv"><span>지금 졸업하면</span><span class="num">졸업장 +${got}장 (수입 ${(1 + GRADUATION.bonusPerDiploma * (state.diplomas + got)).toFixed(1)}배)</span></div>`
+      : `<div class="bar"><i style="width:${pct}%"></i></div><div class="kv"><span>졸업까지</span><span class="num">${formatWon(GRADUATION.minAssets - totalAssets())} 남았어요</span></div>`}
+    <div class="actions" style="margin-top:12px"><button class="btn" data-graduate ${ready ? '' : 'disabled'}>졸업하기</button></div>`;
+  if (card.dataset.html !== html) { card.innerHTML = html; card.dataset.html = html; }
+
+  if (achDirty) {
+    achDirty = false;
+    $('#achList').innerHTML = ACHIEVEMENTS.map(a => `
+      <div class="ach${state.achievements[a.id] ? ' done' : ''}">
+        <span class="ach-mark"><svg viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg></span>
+        <div><b>${a.name}</b><small>${a.desc}</small></div>
+      </div>`).join('');
+  }
+}
+
+function updateHero() {
+  const total = totalAssets();
+  const pct = Math.min(100, (total / GOAL) * 100);
+  $('#goalBar').style.width = pct + '%';
+  $('#goalPct').textContent = pct >= 100 ? '달성' : (pct < 10 ? pct.toFixed(1) : Math.floor(pct)) + '%';
+  $('#goalText').textContent = pct >= 100 ? '1억 달성, 업적 탭에서 졸업할 수 있어요' : '졸업 전 1억 모으기';
+  $('#tapValue').textContent = `1회 +${formatWon(tapValue())}`;
+}
+
+function updateDots() {
+  const cash = state.cash;
+  const incomeReady = cash >= tapSkillCost() || GENERATORS.some((_, i) => (i === 0 || state.gens[i - 1] > 0) && cash >= genCost(i));
+  const nextWish = state.wish.indexOf(false);
+  const dots = {
+    income: incomeReady,
+    wish: nextWish >= 0 && cash >= WISHLIST[nextWish].cost,
+    ach: canGraduate(),
+  };
+  $$('.nav [data-tab]').forEach(b => {
+    const d = b.querySelector('.dot');
+    d.hidden = !(dots[b.dataset.tab] && b.dataset.tab !== currentTab);
+  });
+}
+
+function updateUI() {
+  updateHero();
+  updateDots();
+  if (currentTab === 'income') updateIncome();
+  else if (currentTab === 'savings') updateSavings();
+  else if (currentTab === 'invest') updateInvest();
+  else if (currentTab === 'wish') updateWish();
+  else if (currentTab === 'ach') updateAch();
+}
+
+function switchTab(tab) {
+  currentTab = tab;
+  $$('.nav [data-tab]').forEach(b => b.setAttribute('aria-selected', String(b.dataset.tab === tab)));
+  $$('[data-panel]').forEach(p => { p.hidden = p.dataset.panel !== tab; });
+  $('#content').scrollTop = 0;
+  chartDirty = true;
+  achDirty = true;
+  updateUI();
+}
+
+function showSettings() {
+  openModal((el, close) => {
+    el.innerHTML = `
+      <h2>설정</h2>
+      <p class="lead">용돈 키우기 - 0원에서 시작하는 나의 첫 자산</p>
+      <div class="stats">
+        <div class="kv"><span>총 플레이 시간</span><span class="num">${formatDuration(state.playTime)}</span></div>
+        <div class="kv"><span>지금까지 번 돈</span><span class="num">${formatWon(state.earnedAll)}</span></div>
+        <div class="kv"><span>문자 판별</span><span class="num">${state.phishing.seen}번 중 ${state.phishing.correct}번 정답</span></div>
+        <div class="kv"><span>졸업</span><span class="num">${state.graduations}번</span></div>
+      </div>
+      <p class="note">게임은 이 브라우저에 10초마다 자동으로 저장돼요.</p>
+      <div class="actions">
+        <button class="btn ghost" data-save>지금 저장하기</button>
+        <button class="btn ghost" data-howto>게임 방법 보기</button>
+        <button class="btn danger" data-reset>데이터 초기화</button>
+        <button class="btn" data-close>닫기</button>
+      </div>`;
+    el.querySelector('[data-close]').onclick = close;
+    el.querySelector('[data-save]').onclick = () => { saveGame(); toast('저장했어요'); };
+    el.querySelector('[data-howto]').onclick = () => { close(); showWelcome(); };
+    const reset = el.querySelector('[data-reset]');
+    reset.onclick = () => {
+      if (!reset.dataset.armed) {
+        reset.dataset.armed = '1';
+        reset.textContent = '한 번 더 누르면 모든 기록이 지워져요';
+        return;
+      }
+      close();
+      resetGame();
+      toast('데이터를 초기화했어요');
+    };
+  });
+}
+
+function showWelcome() {
+  openModal((el, close) => {
+    el.innerHTML = `
+      <h2>용돈 키우기</h2>
+      <p class="lead">0원에서 시작하는 나의 첫 자산. 졸업 전까지 1억을 모아 보세요.</p>
+      <ol class="howto">
+        <li>심부름하기를 눌러 돈을 벌고, 수입원을 사서 가만히 있어도 돈이 들어오게 해요.</li>
+        <li>저축 통장에 넣으면 30초마다 복리 이자가 붙어요. 투자는 더 벌 수도, 잃을 수도 있어요.</li>
+        <li>가끔 오는 문자가 사기인지 잘 살펴보세요. 속으면 현금을 잃어요.</li>
+        <li>1억을 모으면 졸업하고, 더 빠르게 다시 시작할 수 있어요.</li>
+      </ol>
+      <div class="actions"><button class="btn" data-close>심부름 시작하기</button></div>`;
+    el.querySelector('[data-close]').onclick = () => { state.welcomed = true; close(); };
+  });
+}
+
+// 이벤트 연결
+function spawnFloat(text, clientX, clientY) {
+  if (reduceMotion) return;
+  const zone = $('#tapZone');
+  const r = zone.getBoundingClientRect();
+  const f = document.createElement('span');
+  f.className = 'float num';
+  f.textContent = text;
+  f.style.left = (clientX - r.left) + 'px';
+  f.style.top = (clientY - r.top - 10) + 'px';
+  zone.appendChild(f);
+  setTimeout(() => f.remove(), 720);
+}
+
+function bindEvents() {
+  const tapBtn = $('#tapBtn');
+  tapBtn.addEventListener('pointerdown', e => {
+    if (e.button !== 0) return;
+    const v = doTap();
+    spawnFloat('+' + formatWon(v), e.clientX, e.clientY);
+    updateHero();
+  });
+  tapBtn.addEventListener('click', e => {
+    if (e.detail !== 0) return; // 키보드(Enter/Space)로 누른 경우만
+    const v = doTap();
+    const r = tapBtn.getBoundingClientRect();
+    spawnFloat('+' + formatWon(v), r.left + r.width / 2, r.top + r.height / 2);
+    tapBtn.classList.add('pressed');
+    setTimeout(() => tapBtn.classList.remove('pressed'), 80);
+  });
+
+  $('#content').addEventListener('click', e => {
+    const t = e.target.closest('button');
+    if (!t || t.disabled) return;
+    if (t.dataset.buyGen !== undefined) buyGenerator(Number(t.dataset.buyGen));
+    else if (t.dataset.buyTap !== undefined) buyTapSkill();
+    else if (t.dataset.buyWish !== undefined) buyWish(Number(t.dataset.buyWish));
+    else if (t.dataset.deposit) deposit(Number(t.dataset.deposit));
+    else if (t.dataset.withdraw) withdraw(Number(t.dataset.withdraw));
+    else if (t.dataset.trade) { trade(t.dataset.trade, Number(t.dataset.frac)); chartDirty = true; }
+    else if (t.dataset.asset) { state.selectedAsset = t.dataset.asset; chartDirty = true; }
+    else if (t.dataset.graduate !== undefined) confirmGraduate();
+    updateUI();
+  });
+
+  $$('.nav [data-tab]').forEach(b => b.addEventListener('click', () => switchTab(b.dataset.tab)));
+  $('#settingsBtn').addEventListener('click', showSettings);
+  $('#overlay').addEventListener('click', e => { if (e.target.id === 'overlay' && modalDismissable && modalCloser) modalCloser(); });
+  document.addEventListener('keydown', e => { if (e.key === 'Escape' && modalDismissable && modalCloser) modalCloser(); });
+  window.addEventListener('resize', () => { chartDirty = true; });
+
+  // 화면을 떠나면 저장하고 멈춤 → 돌아오면 오프라인 수익으로 계산
+  document.addEventListener('visibilitychange', () => {
+    if (document.hidden) { saveGame(); }
+    else { applyOffline(state.savedAt); lastTick = performance.now(); }
+  });
+  window.addEventListener('pagehide', saveGame);
+}
+
+function confirmGraduate() {
+  const got = diplomasIfGraduate();
+  openModal((el, close) => {
+    el.innerHTML = `
+      <h2>졸업할까요?</h2>
+      <p class="lead">졸업장 ${got}장을 받고, 모든 수입이 ${(1 + GRADUATION.bonusPerDiploma * (state.diplomas + got)).toFixed(1)}배가 돼요.</p>
+      <div class="stats">
+        <div class="kv"><span>처음으로 돌아가는 것</span><span>현금, 수입원, 저축, 투자</span></div>
+        <div class="kv"><span>그대로 남는 것</span><span>졸업장, 위시리스트, 업적</span></div>
+      </div>
+      <div class="actions"><button class="btn" data-yes>졸업하기</button><button class="btn ghost" data-close>조금 더 모을래요</button></div>`;
+    el.querySelector('[data-close]').onclick = close;
+    el.querySelector('[data-yes]').onclick = () => { close(); graduate(); updateUI(); };
+  });
+}
+
+// ===== 6. 게임 루프 시작 =====
+let lastTick = performance.now();
+let saveClock = 0;
+
+function tick() {
+  const now = performance.now();
+  const dt = Math.min((now - lastTick) / 1000, 1); // 화면을 떠난 시간은 오프라인 수익으로 따로 계산
+  lastTick = now;
+  if (document.hidden) return;
+  update(dt);
+  saveClock += dt;
+  if (saveClock >= SAVE_INTERVAL) { saveClock = 0; saveGame(); }
+  updateUI();
+}
+
+let lastFrame = performance.now();
+function frame(now) {
+  const dt = (now - lastFrame) / 1000;
+  lastFrame = now;
+  counters.forEach(c => c.step(dt));
+  requestAnimationFrame(frame);
+}
+
+function start() {
+  const loaded = loadGame();
+  seedPriceHistory();
+  buildPanels();
+  counters = [
+    new Counter($('#heroTotal'), formatWon, totalAssets),
+    new Counter($('#heroCash'), formatWon, () => state.cash),
+    new Counter($('#heroCps'), v => `초당 +${formatWon(v)}`, getCps),
+    new Counter($('#savBalance'), formatWon, () => state.savings.balance),
+    new Counter($('#invValue'), formatWon, () => assetValue(state.selectedAsset)),
+  ];
+  bindEvents();
+  switchTab('income');
+  if (!loaded || !state.welcomed) showWelcome();
+  if (loaded) applyOffline(state.savedAt);
+  setInterval(tick, TICK_MS);
+  requestAnimationFrame(frame);
+}
+
+// 테스트용 도구 (Playwright 플레이 테스트에서 시간 가속에 사용)
+window.yongdon = {
+  get state() { return state; },
+  advance(seconds) { for (let t = 0; t < seconds; t += 1) update(Math.min(1, seconds - t)); updateUI(); },
+  phishing(index) { showPhishing(index); },
+  save: saveGame,
+  formatWon,
+};
+
+start();
+</script>
+</body>
+</html>
